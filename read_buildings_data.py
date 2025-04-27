@@ -6,11 +6,18 @@ workbook = openpyxl.load_workbook("./data/Buildings_el.xlsx")
 
 
 class BuildingsWorkbook:
-    def __init__(self, leave_only_matching_entries = True):
+    def __init__(self, leave_only_matching_entries=True):
         self.electricity_sheet = ElectricitySheet()
         self.weather_archive_sheet = WeatherArchiveSheet()
         self.areas_sheet = AreasSheet()
 
+        # If 'leave_only_matching_entries' is True, this piece of code will filter out hourly entries in
+        # weather_archive_sheet that do not have matching hourly entries (by timestamp) in electricity_sheet.
+        # It will also apply same thing to electricity_sheet, so only those hourly entries will be left
+        # that have matching entries in weather_archive_sheet.
+        #
+        # This is needed so we can just take an entry from weather_archive_sheet and find corresponding
+        # entry in electricity_sheet by index, without having to parse their timestamps.
         if leave_only_matching_entries:
             was_timestamps_h = self.weather_archive_sheet.timestamps_numpy.astype('datetime64[h]')
             es_timestamps_h = self.electricity_sheet.timestamps_numpy.astype('datetime64[h]')
