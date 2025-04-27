@@ -1,12 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from read_buildings_data import ElectricitySheet, WeatherArchiveSheet
+from read_buildings_data import ElectricitySheet, WeatherArchiveSheet, BuildingsWorkbook
 from scipy.ndimage import gaussian_filter1d
 
+workbook = BuildingsWorkbook()
 
-def plot_named_parameter_with_gaussian_filter(name: str, dictionary, time_axis):
+
+def plot_named_parameter_with_gaussian_filter(name: str, dictionary, time_axis, sigma):
     data = dictionary[name]
-    smooth_data = gaussian_filter1d(data, sigma=100)
+    smooth_data = gaussian_filter1d(data, sigma=sigma)
     sd_mean = np.mean(smooth_data)
     smooth_data -= sd_mean
     smooth_data *= np.std(data) / np.std(smooth_data)
@@ -14,9 +16,9 @@ def plot_named_parameter_with_gaussian_filter(name: str, dictionary, time_axis):
     plt.plot(time_axis, smooth_data, label=name)
 
 
-def plot_all_named_params(dictionary, time_axis, ncol=2):
+def plot_all_named_params(dictionary, time_axis, ncol=2, sigma=50):
     for name in dictionary.keys():
-        plot_named_parameter_with_gaussian_filter(name, dictionary, time_axis)
+        plot_named_parameter_with_gaussian_filter(name, dictionary, time_axis, sigma)
 
     plt.legend(ncol=ncol)
     plt.grid(True)
@@ -24,13 +26,13 @@ def plot_all_named_params(dictionary, time_axis, ncol=2):
 
 
 def plot_electricity_usage():
-    electricity_sheet = ElectricitySheet()
+    electricity_sheet = workbook.electricity_sheet
     plt.plot(electricity_sheet.timestamps, electricity_sheet.building['ICT'], label="ICT Raw")
-    plot_all_named_params(electricity_sheet.building, electricity_sheet.timestamps, ncol=3)
+    plot_all_named_params(electricity_sheet.building, electricity_sheet.timestamps, ncol=3, sigma=100)
 
 
 def plot_weather_archive():
-    weather_archive_sheet = WeatherArchiveSheet()
+    weather_archive_sheet = workbook.weather_archive_sheet
 
     temperature_only = dict()
     temperature_only['air temperature'] = weather_archive_sheet.numeric_feature['air temperature']
