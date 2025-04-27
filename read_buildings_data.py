@@ -118,12 +118,12 @@ class WeatherArchiveSheet:
         self.dewpoint_temperature = None
 
         self.set_fields()
-        self.fill_missed_data()
+        self.fill_missing_data()
         self.numeric_feature = dict()
         self.categorical_feature = dict()
         self.set_dicts()
 
-    def fill_missed_data(self):
+    def fill_missing_data(self):
         # TODO: Come up with a better way of dealing with missing data
         self.air_temperature[np.isnan(self.air_temperature)] = 0
         self.atm_pressure_mm_mercury[np.isnan(self.atm_pressure_mm_mercury)] = 0
@@ -183,7 +183,7 @@ class WeatherArchiveSheet:
         self.timestamps_numpy = self.timestamps_numpy[indexes]
         self.all_parameters = self.all_parameters[indexes, :]
         self.set_fields()
-        self.fill_missed_data()
+        self.fill_missing_data()
         self.set_dicts()
         # print(f"len(self.building['Atm pressure mm of mercury']): {self.numeric_feature["Atm pressure mm of mercury"].shape[0]}, len(self.atm_pressure_mm_mercury): {self.atm_pressure_mm_mercury.shape[0]}")
 
