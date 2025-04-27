@@ -1,1 +1,5 @@
 openpyxl
+scikit-learn
+numpy
+matplotlib
+scipy
