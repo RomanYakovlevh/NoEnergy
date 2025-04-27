@@ -1,0 +1,29 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore system files (Mac & Windows)
+.DS_Store
+Thumbs.db
+
+# Ignore virtual environment (if using one)
+venv/
+env/
+
+# Ignore large data files except for tracked LFS files
+*.png
+!images/*.png
+
+# Ignore logs and temporary files
+logs/
+*.log
+*.tmp
+
+.idea/
+
+runs/
