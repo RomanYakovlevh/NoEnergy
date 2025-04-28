@@ -20,12 +20,12 @@ def predict_one_building():
         print(
             f"model.score: {r_squared}, model.coef_: {model.coef_}, model.intercept_ {model.intercept_}")
 
-        y_result = model.predict(X_test)
+        y_predict = model.predict(X_test)
 
         t_train_sorted, indexes_train = np.unique(t_train, return_index=True)
         t_test_sorted, indexes_test = np.unique(t_test, return_index=True)
         plot_named_parameter_with_gaussian_filter("y_train", y_train[indexes_train], t_train_sorted, 25)
-        plot_named_parameter_with_gaussian_filter("y_result", y_result[indexes_test], t_test_sorted, 25)
+        plot_named_parameter_with_gaussian_filter("y_predict", y_predict[indexes_test], t_test_sorted, 25)
 
         plt.legend(ncol=2)
         plt.title(f"Linear correlation between weather and electricity \n consumption for building {building_name}")
