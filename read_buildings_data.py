@@ -117,8 +117,9 @@ class WeatherArchiveSheet:
         self.visibility = None
         self.dewpoint_temperature = None
 
+        self.numeric_features_only = None
+
         self.set_fields()
-        self.fill_missing_data()
         self.numeric_feature = dict()
         self.categorical_feature = dict()
         self.set_dicts()
@@ -162,6 +163,13 @@ class WeatherArchiveSheet:
 
         self.dewpoint_temperature = self.all_parameters[:, 11].astype('float64')
 
+        self.fill_missing_data()
+
+        self.numeric_features_only = np.column_stack((self.air_temperature, self.atm_pressure_mm_mercury,
+                                                      self.atm_pressure_sea_level, self.relative_humidity,
+                                                      self.mean_wind_speed, self.visibility,
+                                                      self.dewpoint_temperature))
+
     def set_dicts(self):
         self.numeric_feature['air temperature'] = self.air_temperature
         self.numeric_feature['Atm pressure mm of mercury'] = self.atm_pressure_mm_mercury
@@ -183,7 +191,6 @@ class WeatherArchiveSheet:
         self.timestamps_numpy = self.timestamps_numpy[indexes]
         self.all_parameters = self.all_parameters[indexes, :]
         self.set_fields()
-        self.fill_missing_data()
         self.set_dicts()
         # print(f"len(self.building['Atm pressure mm of mercury']): {self.numeric_feature["Atm pressure mm of mercury"].shape[0]}, len(self.atm_pressure_mm_mercury): {self.atm_pressure_mm_mercury.shape[0]}")
 
@@ -195,7 +202,10 @@ class AreasSheet:
         self.max_row = self.sheet.max_row
 
         self.building_id = [x[0].value for x in self.sheet['A2': f'A{self.max_row}']]
-        self.area_m2 = np.array([x[0].value for x in self.sheet['A2': f'A{self.max_row}']])
+        self.area_m2 = np.array([x[0].value for x in self.sheet['B2': f'B{self.max_row}']], dtype='float64')
+
+        self.building = {self.building_id[i] : self.area_m2[i] for i in range(len(self.building_id))}
+
 
 
 if __name__ == '__main__':

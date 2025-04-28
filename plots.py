@@ -6,8 +6,7 @@ from scipy.ndimage import gaussian_filter1d
 workbook = BuildingsWorkbook()
 
 
-def plot_named_parameter_with_gaussian_filter(name: str, dictionary, time_axis, sigma):
-    data = dictionary[name]
+def plot_named_parameter_with_gaussian_filter(name: str, data, time_axis, sigma):
     smooth_data = gaussian_filter1d(data, sigma=sigma)
     sd_mean = np.mean(smooth_data)
     smooth_data -= sd_mean
@@ -18,7 +17,7 @@ def plot_named_parameter_with_gaussian_filter(name: str, dictionary, time_axis, 
 
 def plot_all_named_params(dictionary, time_axis, ncol=2, sigma=50):
     for name in dictionary.keys():
-        plot_named_parameter_with_gaussian_filter(name, dictionary, time_axis, sigma)
+        plot_named_parameter_with_gaussian_filter(name, dictionary[name], time_axis, sigma)
 
     plt.legend(ncol=ncol)
     plt.grid(True)
