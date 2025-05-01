@@ -1,12 +1,13 @@
 import datetime
 import openpyxl
 import numpy as np
+from openpyxl.workbook import Workbook
 
 workbook = openpyxl.load_workbook("./data/Buildings_el.xlsx")
 
 
 class BuildingsWorkbook:
-    def __init__(self, leave_only_matching_entries=True):
+    def __init__(self, leave_only_matching_entries=True, save_new=True):
         self.electricity_sheet = ElectricitySheet()
         self.weather_archive_sheet = WeatherArchiveSheet()
         self.areas_sheet = AreasSheet()
@@ -28,6 +29,38 @@ class BuildingsWorkbook:
 
             self.electricity_sheet.apply_array_indexing(was_es_time_intersect[2])
             self.weather_archive_sheet.apply_array_indexing(was_es_time_intersect[1])
+
+        if save_new:
+            wb = Workbook()
+
+            es = wb.create_sheet('Electricity kWh')
+            es['A2'] = 'Timestamps'
+            for i, key in enumerate(self.electricity_sheet.building.keys()):
+                es.cell(row=2, column=1 + i, value=key)
+            for i, timestamp in enumerate(self.electricity_sheet.timestamps):
+                es.cell(row=3 + i, column=1, value=timestamp)
+            for i in range(self.electricity_sheet.all_buildings.shape[0]):
+                for j in range(self.electricity_sheet.all_buildings.shape[1]):
+                    es.cell(row=3 + i, column=j + 3, value=self.electricity_sheet.all_buildings[i][j])
+                    #es['B3':f'K{len(self.electricity_sheet.timestamps) + 3}'] = self.electricity_sheet.all_buildings
+
+            was = wb.create_sheet('Weather Archive')
+            was['A2'] = 'Timestamps'
+            for i, key in enumerate(self.weather_archive_sheet.numeric_feature.keys()):
+                was.cell(row=2, column=1 + i, value=key)
+            for i, timestamp in enumerate(self.weather_archive_sheet.timestamps):
+                was.cell(row=3 + i, column=1, value=timestamp)
+            for i, key in enumerate(self.weather_archive_sheet.categorical_feature.keys()):
+                was.cell(row=3 + i, column=1 + len(self.weather_archive_sheet.numeric_feature.keys()) + i, value=key)
+            # was['B2':'I2'] = self.weather_archive_sheet.numeric_features_only.keys()
+            # was['J2':'M2'] = self.weather_archive_sheet.categorical_feature.values()
+            for i in range(self.weather_archive_sheet.all_parameters.shape[0]):
+                for j in range(self.weather_archive_sheet.all_parameters.shape[1]):
+                    v = self.weather_archive_sheet.all_parameters[i][j]
+                    v = v if v is not None else 0
+                    was.cell(row=3 + i, column=j + 3, value=v)
+
+            wb.save('data/Buildings_aligned.xlsx')
 
 
 class ElectricitySheet:
@@ -176,7 +209,7 @@ class WeatherArchiveSheet:
         self.numeric_feature['atm pressure to sea level'] = self.atm_pressure_sea_level
         self.numeric_feature['Relative humidity (%)'] = self.relative_humidity
         self.numeric_feature['Mean wind speed'] = self.mean_wind_speed
-        # self.numeric_feature['Max gust value'] = self.max_gust_value # Uncomment once we figure out 'None'-s
+        #self.numeric_feature['Max gust value'] = self.max_gust_value # Uncomment once we figure out 'None'-s
         self.numeric_feature['visibility'] = self.visibility
         self.numeric_feature['dewpoint temperature'] = self.dewpoint_temperature
 
