@@ -36,29 +36,36 @@ class BuildingsWorkbook:
             es = wb.create_sheet('Electricity kWh')
             es['A2'] = 'Timestamps'
             for i, key in enumerate(self.electricity_sheet.building.keys()):
-                es.cell(row=2, column=1 + i, value=key)
+                es.cell(row=2, column=2 + i, value=key)
             for i, timestamp in enumerate(self.electricity_sheet.timestamps):
                 es.cell(row=3 + i, column=1, value=timestamp)
             for i in range(self.electricity_sheet.all_buildings.shape[0]):
                 for j in range(self.electricity_sheet.all_buildings.shape[1]):
-                    es.cell(row=3 + i, column=j + 3, value=self.electricity_sheet.all_buildings[i][j])
-                    #es['B3':f'K{len(self.electricity_sheet.timestamps) + 3}'] = self.electricity_sheet.all_buildings
+                    es.cell(row=3 + i, column=j + 2, value=self.electricity_sheet.all_buildings[i][j])
+                    # es['B3':f'K{len(self.electricity_sheet.timestamps) + 3}'] = self.electricity_sheet.all_buildings
 
             was = wb.create_sheet('Weather Archive')
             was['A2'] = 'Timestamps'
-            for i, key in enumerate(self.weather_archive_sheet.numeric_feature.keys()):
-                was.cell(row=2, column=1 + i, value=key)
+            col_titles = [
+                "air temperature", "Atm pressure mm of mercury", "atm pressure to sea level", "Relative humidity (%)",
+                "Mean wind direction",
+                "Mean wind speed", "Max gust value", "weather phenomena", "weather phenomena 2", "total cloud cover",
+                "visibility", "dewpoint temperature"]
+            for i, key in enumerate(col_titles):
+                was.cell(row=2, column=2 + i, value=key)
             for i, timestamp in enumerate(self.weather_archive_sheet.timestamps):
                 was.cell(row=3 + i, column=1, value=timestamp)
+
             for i, key in enumerate(self.weather_archive_sheet.categorical_feature.keys()):
-                was.cell(row=3 + i, column=1 + len(self.weather_archive_sheet.numeric_feature.keys()) + i, value=key)
+                was.cell(row=3 + i, column=2 + len(self.weather_archive_sheet.numeric_feature.keys()) + i, value=key)
+
             # was['B2':'I2'] = self.weather_archive_sheet.numeric_features_only.keys()
             # was['J2':'M2'] = self.weather_archive_sheet.categorical_feature.values()
             for i in range(self.weather_archive_sheet.all_parameters.shape[0]):
                 for j in range(self.weather_archive_sheet.all_parameters.shape[1]):
                     v = self.weather_archive_sheet.all_parameters[i][j]
                     v = v if v is not None else 0
-                    was.cell(row=3 + i, column=j + 3, value=v)
+                    was.cell(row=3 + i, column=j + 2, value=v)
 
             wb.save('data/Buildings_aligned.xlsx')
 
@@ -209,7 +216,7 @@ class WeatherArchiveSheet:
         self.numeric_feature['atm pressure to sea level'] = self.atm_pressure_sea_level
         self.numeric_feature['Relative humidity (%)'] = self.relative_humidity
         self.numeric_feature['Mean wind speed'] = self.mean_wind_speed
-        #self.numeric_feature['Max gust value'] = self.max_gust_value # Uncomment once we figure out 'None'-s
+        # self.numeric_feature['Max gust value'] = self.max_gust_value # Uncomment once we figure out 'None'-s
         self.numeric_feature['visibility'] = self.visibility
         self.numeric_feature['dewpoint temperature'] = self.dewpoint_temperature
 
@@ -237,8 +244,7 @@ class AreasSheet:
         self.building_id = [x[0].value for x in self.sheet['A2': f'A{self.max_row}']]
         self.area_m2 = np.array([x[0].value for x in self.sheet['B2': f'B{self.max_row}']], dtype='float64')
 
-        self.building = {self.building_id[i] : self.area_m2[i] for i in range(len(self.building_id))}
-
+        self.building = {self.building_id[i]: self.area_m2[i] for i in range(len(self.building_id))}
 
 
 if __name__ == '__main__':
