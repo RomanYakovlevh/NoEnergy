@@ -1,5 +1,7 @@
-openpyxl
-scikit-learn
-numpy
-matplotlib
-scipy
+openpyxl~=3.1.5
+scikit-learn~=1.6.1
+numpy~=2.2.5
+matplotlib~=3.10.1
+scipy~=1.15.2
+pandas~=2.2.3
+joblib~=1.4.2
