@@ -7,7 +7,7 @@ workbook = openpyxl.load_workbook("./data/Buildings_el.xlsx")
 
 
 class BuildingsWorkbook:
-    def __init__(self, leave_only_matching_entries=True, save_new=True):
+    def __init__(self, leave_only_matching_entries=True, save_new=False):
         self.electricity_sheet = ElectricitySheet()
         self.weather_archive_sheet = WeatherArchiveSheet()
         self.areas_sheet = AreasSheet()
