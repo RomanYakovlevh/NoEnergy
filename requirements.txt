@@ -1,7 +1,0 @@
-openpyxl
-scikit-learn
-numpy
-matplotlib
-scipy
-torch
-torchvision
