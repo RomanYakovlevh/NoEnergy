@@ -1,5 +1,3 @@
-# train_models_all_xgboost.py
-
 import os
 import pandas as pd
 import xgboost as xgb
@@ -16,13 +14,17 @@ data = pd.read_csv('data/outputs/combined_data_preprocessed.csv')
 data['Timestamps'] = pd.to_datetime(data['Timestamps'])
 data.set_index('Timestamps', inplace=True)
 
+# Load building area data
+area_df = pd.read_csv("data/areas.csv")
+area_map = dict(zip(area_df["Buid_ID"], area_df["Area [m2]"]))
+
 # Building groups
 building_columns = ['ICT', 'U06, U06A, U05B', 'OBS', 'U05, U04, U04B, GEO',
                     'TEG', 'LIB', 'MEK', 'SOC', 'S01', 'D04']
 
 # Features used for training
-features = ['lag_1', 'rolling_3h', 'rolling_6h', 'hour', 'day_of_week', 'month',
-            'is_weekend', 'air temperature', 'Atm pressure mm of mercury', 'Relative humidity (%)']
+base_features = ['lag_1', 'rolling_3h', 'rolling_6h', 'hour', 'day_of_week', 'month',
+                 'is_weekend', 'air temperature', 'Atm pressure mm of mercury', 'Relative humidity (%)']
 
 # Train model per building
 for building in building_columns:
@@ -36,9 +38,17 @@ for building in building_columns:
     train_data = train_data.dropna(subset=[building])
     test_data = test_data.dropna(subset=[building])
 
-    # Define X and y
+    # Add building area as a feature
+    area = area_map[building]
+    train_data["area"] = area
+    test_data["area"] = area
+
+    # Features to use for training
+    features = base_features + ["area"]
+
     X_train = train_data[features]
     y_train = train_data[building]
+
     X_test = test_data[features]
     y_test = test_data[building]
 
@@ -67,4 +77,4 @@ for building in building_columns:
     plt.savefig(f"plots/xgboost/{safe_building_name}_xgb_plot.png")
     plt.close()
 
-print("\n✅ All XGBoost models trained and saved.")
+print("\n All XGBoost models trained and saved.")

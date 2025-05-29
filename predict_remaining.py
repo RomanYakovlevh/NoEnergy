@@ -1,57 +1,103 @@
-# predict_remaining_random_forest.py
-
+import os
 import pandas as pd
 import joblib
+import matplotlib.pyplot as plt
+from glob import glob
 from sklearn.preprocessing import MinMaxScaler
 
-# Load the trained model
-model = joblib.load('model/random_forest_model.pkl')
+# Configuration
+MODELS_BASE_DIR = "models"
+PREDICTION_BASE_DIR = "prediction"
+NEW_DATA_PATH = "data/new_year_data.csv"
 
-# Simulate new data for the next year (e.g., first 3 months of 2024)
-# Replace this with actual new 3-month data for testing
-new_year_data = pd.read_csv('data/new_year_data.csv')  # This file will be given at the event
-new_year_data['Timestamps'] = pd.to_datetime(new_year_data['Timestamps'])
-new_year_data.set_index('Timestamps', inplace=True)
+# Features used during training
+features = ['lag_1', 'rolling_3h', 'rolling_6h', 'hour', 'day_of_week', 'month', 'is_weekend',
+            'air temperature', 'Atm pressure mm of mercury', 'Relative humidity (%)']
 
-# Preprocess the new year's data (same as above)
-new_year_data['hour'] = new_year_data.index.hour
-new_year_data['day_of_week'] = new_year_data.index.dayofweek
-new_year_data['month'] = new_year_data.index.month
-new_year_data['is_weekend'] = new_year_data['day_of_week'].isin([5, 6]).astype(int)
+# Load and preprocess new year data
+df = pd.read_csv(NEW_DATA_PATH)
+df['Timestamps'] = pd.to_datetime(df['Timestamps'])
+df.set_index('Timestamps', inplace=True)
 
-# Normalize the weather-related features
-scaler = MinMaxScaler()
+# Time-based features
+df['hour'] = df.index.hour
+df['day_of_week'] = df.index.dayofweek
+df['month'] = df.index.month
+df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int)
+
+# Normalize weather columns
 weather_columns = ['air temperature', 'Atm pressure mm of mercury', 'Relative humidity (%)']
-new_year_data[weather_columns] = scaler.fit_transform(new_year_data[weather_columns])
+scaler = MinMaxScaler()
+df[weather_columns] = scaler.fit_transform(df[weather_columns])
 
-# Create lag and rolling features
-new_year_data['lag_1'] = new_year_data['ICT'].shift(1)
-new_year_data['rolling_3h'] = new_year_data['ICT'].rolling(window=3).mean()
-new_year_data['rolling_6h'] = new_year_data['ICT'].rolling(window=6).mean()
+# Go through model types
+for model_type in os.listdir(MODELS_BASE_DIR):
+    model_dir = os.path.join(MODELS_BASE_DIR, model_type)
+    if not os.path.isdir(model_dir):
+        continue
 
-# Drop missing values due to lag/rolling window
-new_year_data.dropna(inplace=True)
+    print(f"\n🔍 Processing model type: {model_type}")
 
-# Make predictions for the next 9 months (remaining months of the year)
-X_new = new_year_data[['lag_1', 'rolling_3h', 'rolling_6h', 'hour', 'day_of_week', 'month', 'is_weekend',
-                        'air temperature', 'Atm pressure mm of mercury', 'Relative humidity (%)']]
+    # Output directory
+    output_dir = os.path.join(PREDICTION_BASE_DIR, model_type)
+    os.makedirs(output_dir, exist_ok=True)
 
-# Predict the energy consumption for the next months
-predictions = model.predict(X_new)
+    for model_path in glob(f"{model_dir}/*.pkl"):
+        filename = os.path.basename(model_path)
 
-# Add predictions back to the data for visualization
-new_year_data['Predicted ICT'] = predictions
+        if model_type == "random_forest":
+            building_key = filename.replace("_rndfrst_model.pkl", "")
+        elif model_type == "xgboost":
+            building_key = filename.replace("_xgb_model.pkl", "")
+        else:
+            continue  # skip unknown model types
 
-# Visualize predictions (actual vs. predicted for new year)
-import matplotlib.pyplot as plt
+        building_column = building_key.replace("_", ", ")
 
-plt.figure(figsize=(12, 6))
-plt.plot(new_year_data.index, new_year_data['ICT'], label='Actual', color='blue')
-plt.plot(new_year_data.index, new_year_data['Predicted ICT'], label='Predicted', color='red', linestyle='--')
-plt.legend()
-plt.xlabel('Time')
-plt.ylabel('Energy Consumption (ICT)')
-plt.title('Energy Consumption Prediction for the New Year')
-plt.xticks(rotation=45)
-plt.show()
-plt.savefig(f"prediction/random_forest/plot.png")
+        if building_column not in df.columns:
+            print(f"⚠️ Skipping {building_column} — not found in data columns")
+            continue
+
+        print(f"⏳ Predicting for: {building_column}")
+
+        # Create lag and rolling features
+        df['lag_1'] = df[building_column].shift(1)
+        df['rolling_3h'] = df[building_column].rolling(3).mean()
+        df['rolling_6h'] = df[building_column].rolling(6).mean()
+
+        df_model = df.dropna(subset=['lag_1', 'rolling_3h', 'rolling_6h'])
+
+        X = df_model[features]
+        y_true = df_model[building_column]
+
+        # Load model and predict
+        model = joblib.load(model_path)
+        y_pred = model.predict(X)
+
+        # Output file paths
+        safe_name = building_key  # e.g., U06_U06A_U05B
+        pred_csv_path = os.path.join(output_dir, f"prediction_{safe_name}.csv")
+        plot_path = os.path.join(output_dir, f"plot_{safe_name}.png")
+
+        # Save CSV
+        pd.DataFrame({
+            'Timestamps': df_model.index,
+            'Actual': y_true.values,
+            'Predicted': y_pred
+        }).to_csv(pred_csv_path, index=False)
+
+        # Save plot
+        plt.figure(figsize=(12, 5))
+        plt.plot(df_model.index, y_true, label="Actual", color='blue')
+        plt.plot(df_model.index, y_pred, label="Predicted", color='red', linestyle='--')
+        plt.title(f"{building_column} - Prediction ({model_type})")
+        plt.xlabel("Time")
+        plt.ylabel("Energy Consumption")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(plot_path)
+        plt.close()
+
+        print(f"✅ Saved: {pred_csv_path}, {plot_path}")
+
+print("\n🎯 All model predictions complete.")
