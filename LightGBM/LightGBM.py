@@ -2,18 +2,12 @@
 
 Fixed LightGBM workflow with categorical‑safe forecast loop
 ────────────────────────────────────────────────────────────
-• trains base booster on 10 reference buildings (kWh /m²)
+• trains base booster on 10 reference buildings
 • fine‑tunes +500 trees on the new building’s Jan‑Feb data
 • prints February MAE / MAPE
 • autoregressively predicts Mar‑Dec 2023 and writes one CSV that
   stitches Jan‑Feb actuals with Mar‑Dec forecasts
 
-Changes vs previous draft
-–––––––––––––––––––––––––
-✓ only **building_id** stays categorical → no setitem type errors
-✓ added "NEW" category before training so future rows are valid
-✓ date‑range freq = "h" (lowercase) → removes FutureWarning
-✓ lag/roll recomputed inline in the forecast loop
 """
 
 from __future__ import annotations
